@@ -1,0 +1,15 @@
+[package]
+name = "json_viewer"
+version = "0.1.0"
+edition = "2021"
+description = "JSON Viewer"
+authors = ["Vi+ <vitaliyy@gmail.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ratatui = { version = "0.26.0", features = ["crossterm"] }
+tui-tree-widget = "0.17.0"
+serde_json = "1.0.113"
+crossterm = "0.27.0"
+log2 = "0.1.10"
