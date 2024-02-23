@@ -12,7 +12,7 @@ use ratatui::{
     Terminal,
 };
 use serde_json::Value;
-use std::{env, error::Error, hash::Hash, io, io::Read};
+use std::{env, error::Error, fmt, hash::Hash, io, io::Read, process::exit};
 use tui_tree_widget::{Tree, TreeItem, TreeState};
 
 #[derive(Default, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30,6 +30,22 @@ impl ToString for JsonPointer {
             Self::ArrayIdx(index) => index.to_string(),
             Self::None => String::new(),
         }
+    }
+}
+
+// TODO: https://github.com/aweinstock314/rust-clipboard
+
+struct Content {
+    key: Vec<JsonPointer>,
+    value: String,
+}
+
+impl fmt::Debug for Content {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("")
+            .field(&self.key)
+            .field(&self.value)
+            .finish()
     }
 }
 
@@ -108,6 +124,18 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                         .add_modifier(Modifier::BOLD),
                 );
 
+            // let vertical =
+            //     Layout::vertical([Constraint::Percentage(20), Constraint::Percentage(80)]);
+            // let [instructions, _content] = vertical.areas(area);
+            // let text = if app.show_cmd_popup {
+            //     "Press c to close the Command popup"
+            // } else {
+            //     "Press c to show the Command popup"
+            // };
+            // let paragraph = Paragraph::new(text.blue())
+            //     .centered()
+            //     .wrap(Wrap { trim: true });
+            // f.render_widget(paragraph, instructions);
             if app.show_cmd_popup {
                 let block = Block::default()
                     .title("Available commands")
@@ -118,6 +146,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
             }
             f.render_stateful_widget(items, area, &mut app.state);
         })?;
+
+        // // main: selected: [ObjectKey("ticket"), ObjectKey("state"), ObjectKey("list"), ArrayIdx(0), ObjectKey("customer_id")]
+        // // TODO: https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#examples-1
+        // debug!("selected: {:?}", app.state.selected());
 
         if event::poll(std::time::Duration::from_millis(50))? {
             match event::read()? {
@@ -137,6 +169,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                     KeyCode::PageDown => app.state.scroll_down(3),
                     KeyCode::PageUp => app.state.scroll_up(3),
                     KeyCode::Char('c') => app.show_cmd_popup = !app.show_cmd_popup,
+                    // KeyCode::F(1) => {
+                    //     let t = Content {
+                    //         key: app.state.selected(),
+                    //         value: "".to_string(),
+                    //     };
+                    //     debug!("selected: {:?}", t);
+                    // }
                     _ => {}
                 },
                 Event::Mouse(mouse) => match mouse.kind {
@@ -167,16 +206,16 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let _log2 = log2::open(&format!("{}.log", env!("CARGO_PKG_NAME"))).start();
+    // let _log2 = log2::open(&format!("{}.log", env!("CARGO_PKG_NAME"))).start();
 
     let mut stdin = io::stdin();
     let mut buff = String::new();
     stdin.read_to_string(&mut buff)?;
     let json_input: Value = serde_json::from_str(&buff)?;
-    debug!("json_input: {json_input:?}");
+    // debug!("json_input: {json_input:?}");
 
     let items = root_tree_items(&json_input);
-    debug!("items: {items:?}");
+    // debug!("items: {items:?}");
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -196,7 +235,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     terminal.show_cursor()?;
 
     if let Err(err) = res {
-        error!("{err:?}");
+        println!("{err:?}");
+        exit(1);
     }
     Ok(())
 }
