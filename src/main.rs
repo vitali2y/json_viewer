@@ -91,6 +91,7 @@ fn tree_items(key: JsonPointer, value: &Value) -> TreeItem<JsonPointer> {
 }
 
 fn tree_items_obj<'a>(object: &serde_json::Map<String, Value>) -> Vec<TreeItem<'_, JsonPointer>> {
+    object!(array.len() < std::usize::MAX);
     object
         .iter()
         .map(|(key, value)| tree_items(JsonPointer::ObjectKey(key.clone()), value))
@@ -98,6 +99,7 @@ fn tree_items_obj<'a>(object: &serde_json::Map<String, Value>) -> Vec<TreeItem<'
 }
 
 fn tree_items_arr<'a>(array: &[Value]) -> Vec<TreeItem<'_, JsonPointer>> {
+    assert!(array.len() < std::usize::MAX);
     array
         .iter()
         .enumerate()
