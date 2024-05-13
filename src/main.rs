@@ -3,7 +3,6 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use log2::*;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     prelude::*,
@@ -91,7 +90,7 @@ fn tree_items(key: JsonPointer, value: &Value) -> TreeItem<JsonPointer> {
 }
 
 fn tree_items_obj<'a>(object: &serde_json::Map<String, Value>) -> Vec<TreeItem<'_, JsonPointer>> {
-    object!(array.len() < std::usize::MAX);
+    assert!(object.len() < std::usize::MAX);
     object
         .iter()
         .map(|(key, value)| tree_items(JsonPointer::ObjectKey(key.clone()), value))
@@ -151,7 +150,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
 
         // // main: selected: [ObjectKey("ticket"), ObjectKey("state"), ObjectKey("list"), ArrayIdx(0), ObjectKey("customer_id")]
         // // TODO: https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#examples-1
-        // debug!("selected: {:?}", app.state.selected());
+        // println!("selected: {:?}", app.state.selected());
 
         if event::poll(std::time::Duration::from_millis(50))? {
             match event::read()? {
@@ -162,31 +161,32 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B
                     KeyCode::Right => app.state.key_right(),
                     KeyCode::Down => app.state.key_down(&app.items),
                     KeyCode::Up => app.state.key_up(&app.items),
-                    KeyCode::Home => {
-                        app.state.select_first(&app.items);
-                    }
-                    KeyCode::End => {
-                        app.state.select_last(&app.items);
-                    }
+                    KeyCode::Home => app.state.select_first(&app.items),
+                    KeyCode::End => app.state.select_last(&app.items),
                     KeyCode::PageDown => app.state.scroll_down(3),
                     KeyCode::PageUp => app.state.scroll_up(3),
-                    KeyCode::Char('c') => app.show_cmd_popup = !app.show_cmd_popup,
+                    // KeyCode::Char('c') => {
+                    //     app.show_cmd_popup = !app.show_cmd_popup;
+                    //     app.show_cmd_popup
+                    // },
+
                     // KeyCode::F(1) => {
                     //     let t = Content {
                     //         key: app.state.selected(),
                     //         value: "".to_string(),
                     //     };
-                    //     debug!("selected: {:?}", t);
+                    //     println!("selected: {:?}", t);
+                    //     true
                     // }
-                    _ => {}
+                    _ => true,
                 },
                 Event::Mouse(mouse) => match mouse.kind {
                     event::MouseEventKind::ScrollDown => app.state.scroll_down(1),
                     event::MouseEventKind::ScrollUp => app.state.scroll_up(1),
-                    _ => {}
+                    _ => true,
                 },
-                _ => {}
-            }
+                _ => true,
+            };
         }
     }
 }
@@ -214,10 +214,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut buff = String::new();
     stdin.read_to_string(&mut buff)?;
     let json_input: Value = serde_json::from_str(&buff)?;
-    // debug!("json_input: {json_input:?}");
+    // println!("json_input: {json_input:?}");
 
     let items = root_tree_items(&json_input);
-    // debug!("items: {items:?}");
+    // println!("items: {items:?}");
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
